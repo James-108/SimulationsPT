@@ -9,9 +9,14 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+
+import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.sims.simulations.ElevatorSimulation;
+import frc.robot.sims.mechanisms.Mechanator;
 
 public class ExampleSubsystem extends SubsystemBase implements Reportable {
   private final TalonFX motor;
@@ -21,6 +26,8 @@ public class ExampleSubsystem extends SubsystemBase implements Reportable {
   private MotionMagicVoltage motionMagicVoltage;
   private final NeutralOut neutralRequest = new NeutralOut();
 
+  private final ElevatorSimulation esim;
+
   public ExampleSubsystem(){
     motor = new TalonFX(0);
     motionMagicVoltage = new MotionMagicVoltage(0);
@@ -29,16 +36,24 @@ public class ExampleSubsystem extends SubsystemBase implements Reportable {
 
     CommandScheduler.getInstance().registerSubsystem(this);
     //TODO create ligament
+    MechanismLigament2d ligament = Mechanator.getInstance().getLigament("James", 1.5, 1.5, 0.8, 90.0);
     //TODO create simulation object
+    esim = new ElevatorSimulation(motor, ligament, 10.0, 0.5, 0.005, 0.1, 1.0, 0.0);
   }
 
   public void setMotorConfigs(){
         TalonFXConfiguration config = new TalonFXConfiguration();
 
         //TODO motor configs
-        // config.Feedback. // ratios
-        // config.Slot0. // kP, kI, kD
-        // config.MotionMagic. // kP, kI, kD
+        config.Feedback.SensorToMechanismRatio = 1.0;
+        config.Feedback.RotorToSensorRatio = 1.0;
+
+        config.Slot0.kP = 16.0; // kP, kI, kD
+        config.Slot0.kI = 0.0;
+        config.Slot0.kD = 0.0;
+        config.MotionMagic.MotionMagicCruiseVelocity = 150.0; // kP, kI, kD
+        config.MotionMagic.MotionMagicAcceleration = 1500.0;
+        config.MotionMagic.MotionMagicJerk = 15000.0;
         
         StatusCode statusCode = motor.getConfigurator().apply(config);
         if (!statusCode.isOK()){
